@@ -15,6 +15,9 @@ struct HomeState {
     var showGenderDropDown = false
     var showSpeciesDropDown = false
     var showStatusDropDown = false
+    var goToDetailsView = false
+    var selectedItem: RAMResult? = nil
+    var newPageIsLoading: Bool = false
     var allFiltersNil: Bool {
         selectedGender == nil && selectedSpecies == nil && selectedStatus == nil
     }

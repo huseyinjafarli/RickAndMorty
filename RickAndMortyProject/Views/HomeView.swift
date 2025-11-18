@@ -9,45 +9,60 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject var vm: HomeViewModel = HomeViewModel()
+    
     var body: some View {
         NavigationStack {
-            VStack {
-                searchBar
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        if !vm.results.isEmpty {
-                            ForEach(vm.results, id: \.id) { item in
-                                cell(for: item)
-                            }
-                            .padding(.horizontal, 10)
-                        } else {
-                            if !vm.isLoading {
-                                Text("No results found")
-                                    .foregroundColor(.gray)
-                                    .italic()
-                            } else {
-                                ProgressView()
-                            }
-                        }
-                    }
-                    .padding(.vertical, 10)
-                    .onAppear {
-                        vm.viewDidLoad()
-                    }
+            ZStack {
+                VStack(spacing: 0) {
+                    searchBar
+                    Spacer()
                 }
-                .navigationTitle("Rick and Morty")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Reset Filters") {
-                            vm.send(.tappedResetFilters)
+                .zIndex(1)
+                VStack(spacing: 8) {
+                    Rectangle()
+                        .fill(.clear)
+                        .frame(height: 120)
+                    ScrollView {
+                        LazyVStack(alignment: .leading) {
+//                            Spacer()
+                            if !vm.results.isEmpty {
+                                ForEach(vm.results) { result in
+                                    cell(for: result)
+                                        .onTapGesture {
+                                            vm.send(.itemSelected(result))
+                                        }
+                                        .onAppear {
+                                            if let lastItem = vm.results.last, result.id == lastItem.id {
+                                                vm.send(.scrolledToEnd)
+                                            }
+                                        }
+                                    
+                                }
+                                .padding(.horizontal, 10)
+                            } else {
+                                if !vm.isLoading {
+                                    Text("No results found")
+                                        .foregroundColor(.gray)
+                                        .italic()
+                                } else {
+                                    ProgressView()
+                                }
+                            }
                         }
-                        .disabled(vm.state.allFiltersNil)
+                        .padding(.vertical, 4)
+                        .onAppear {
+                            vm.send(.viewDidLoad)
+                        }
                     }
+                    .setNavigation(vm: vm)
+                    .onTapGesture {
+                        dismissKeyboard()
+                    }
+                    
                 }
             }
-            .onTapGesture {
-                dismissKeyboard()
+            .navigationDestination(isPresented: $vm.state.goToDetailsView) {
+                DetailsView(item: vm.state.selectedItem ?? mock())
             }
         }
     }
@@ -83,9 +98,6 @@ struct HomeView: View {
                 .stroke(lineWidth: 1))
             .padding()
             .autocorrectionDisabled()
-            .onChange(of: vm.state.search) { _, _ in
-                vm.send(.searchChanged)
-            }
     }
     
     var searchBar: some View {
@@ -98,6 +110,7 @@ struct HomeView: View {
                     vm.send(.selectedGender(gender))
                 }
                 .frame(maxWidth: 150)
+                .frame(maxHeight: 50)
                 
                 Spacer()
                 
@@ -107,6 +120,7 @@ struct HomeView: View {
                     vm.send(.selectedSpecies(species))
                 }
                 .frame(maxWidth: 150)
+                .frame(maxHeight: 50)
                 
                 Spacer()
                 
@@ -116,6 +130,7 @@ struct HomeView: View {
                     vm.send(.selectedStatus(status))
                 }
                 .frame(maxWidth: 150)
+                .frame(maxHeight: 50)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal)
@@ -123,7 +138,7 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    func cell(for character: RAMResults) -> some View {
+    func cell(for character: RAMResult) -> some View {
         var circleColor: Color {
             switch character.status {
             case "Alive":
@@ -137,11 +152,17 @@ struct HomeView: View {
         
         HStack(spacing: 10) {
             AsyncImage(url: URL(string: character.image)) { image in
-                image.image?
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .clipShape(.circle)
+                if let image = image.image {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 100)
+                        .clipShape(.circle)
+                } else {
+                    Circle()
+                        .fill(LinearGradient(colors: [.secondary, .white], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 100, height: 100)
+                }
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(character.name)")
@@ -175,7 +196,7 @@ struct HomeView: View {
         .background(RoundedRectangle(cornerRadius: 20)
             .fill(.background))
         .shadow(color: .primary.opacity(0.2), radius: 2, x: 0, y: 0)
-        
+        .zIndex(10)
     }
     
 }
@@ -194,7 +215,7 @@ struct FilterPicker<T: CaseIterable & RawRepresentable & Hashable>: View where T
     let onSelect: (T) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading) {
             
             // MARK: - Button (header)
             Button(action: onTap) {
@@ -208,7 +229,6 @@ struct FilterPicker<T: CaseIterable & RawRepresentable & Hashable>: View where T
                     Image(systemName: isOpen ? "chevron.up" : "chevron.down")
                         .font(.subheadline)
                 }
-                .padding(.vertical, 6)
             }
             
             // MARK: - Dropdown
@@ -225,16 +245,37 @@ struct FilterPicker<T: CaseIterable & RawRepresentable & Hashable>: View where T
                         }
                     }
                 }
-                .padding(.vertical, 8)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .frame(maxWidth: 150)
         .padding(12)
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.gray.opacity(0.4), lineWidth: 1)
         )
+        .background(Color.white)
         .animation(.easeInOut(duration: 0.2), value: isOpen)
+    }
+}
+
+extension View {
+    func setNavigation(vm: HomeViewModel) -> some View {
+        self
+            .navigationTitle("Rick and Morty")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Reset Filters") {
+                        vm.send(.tappedResetFilters)
+                    }
+                    .disabled(vm.state.allFiltersNil)
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    if vm.state.newPageIsLoading {
+                        ProgressView()
+                    }
+                }
+            }
     }
 }

@@ -5,7 +5,7 @@
 //  Created by Huseyin Jafarli on 18.11.25.
 //
 
-struct RAMResults: Codable {
+struct RAMResult: Codable, Identifiable {
     var id: Int
     var name: String
     var status: String

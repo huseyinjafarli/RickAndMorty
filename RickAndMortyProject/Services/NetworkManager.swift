@@ -27,7 +27,6 @@ final class NetworkManager: NetworkManagerProtocol {
             throw NetworkError.badUrl
         }
         
-        
         let (data, response) = try await URLSession.shared.data(from: url)
         
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -38,21 +37,29 @@ final class NetworkManager: NetworkManagerProtocol {
             throw NetworkError.badResponse
         }
         
-//        print("\(data)")
         do {
             let jsonData = try JSONSerialization.jsonObject(with: data, options: [.json5Allowed])
-            print("**************************************\nFromNetworkManager\(jsonData)\nFromNetworkManager\n**************************************") // Prints the raw data bytes
+            print("FromNetworkManager\(jsonData)*")
         } catch {
             print("Error serializing data: \(error)")
         }
         
         let decodedData = try JSONDecoder().decode(T.self, from: data)
 
-//        print("data decoded")
-
         return decodedData
     }
     
+    func buildFilterURL(name: [String: String]) -> String {
+        let baseUrl = "https://rickandmortyapi.com/api/character"
+        var components = URLComponents(string: baseUrl)
+        var queryItems: [URLQueryItem] = []
+        for item in name {
+            let queryItem = URLQueryItem(name: item.key, value: item.value)
+            queryItems.append(queryItem)
+        }
+        components?.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components?.string ?? ""
+    }
 }
 
 protocol NetworkManagerProtocol {

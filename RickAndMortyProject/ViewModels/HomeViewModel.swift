@@ -9,20 +9,19 @@ import Foundation
 
 @MainActor
 class HomeViewModel: ObservableObject {
-    //    @Published var item: RAMItem?
+    @Published var item: RAMItem?
     @Published var state = HomeState()
-    @Published var results: [RAMResults] = []
+    @Published var results: [RAMResult] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
-    @Published var searchTask: Task<Void, Never>?
-    
+    var page: Int = 1
+    var nm = NetworkManager.shared
+    var viewDidLoad: Bool = false
     func send(_ intent: HomeIntent) {
-        Task {
-            await handleUIEvent(intent)
-        }
+        handleUIEvent(intent)
     }
     
-    private func handleUIEvent(_ intent: HomeIntent) async {
+    private func handleUIEvent(_ intent: HomeIntent){
         switch intent {
         case .tappedFilterByGender:
             if state.allDropDownsClosed {
@@ -56,16 +55,16 @@ class HomeViewModel: ObservableObject {
             state.makeAllDropDownsClosed()
             state.selectedGender = gender
             applyAllFilters()
+//            applyFilter(by: "gender", with: gender.rawValue)
         case .selectedSpecies(let species):
             state.makeAllDropDownsClosed()
             state.selectedSpecies = species
             applyAllFilters()
+//            applyFilter(by: "species", with: species.rawValue)
         case .selectedStatus(let status):
             state.makeAllDropDownsClosed()
             state.selectedStatus = status
             applyAllFilters()
-        case .searchChanged:
-            ()
         case .tappedClearSearch:
             state.search = ""
             applyAllFilters()
@@ -75,17 +74,36 @@ class HomeViewModel: ObservableObject {
             state.makeAllDropDownsClosed()
             applyAllFilters()
         case .tappedSearchButton:
+            if !state.search.isEmpty {
+                applyAllFilters()
+            }
+        case .itemSelected(let item):
+            state.selectedItem = item
+            state.goToDetailsView = true
+        case .viewDidLoad:
+            guard !viewDidLoad else { return }
+            viewDidLoad = true
+//            getCharacters()
             applyAllFilters()
+        case .scrolledToEnd:
+            page += 1
+            applyAllFilters()
+            print("scrolled to end")
+        case .newPageLoaded:
+            state.newPageIsLoading = false
+            
         }
     }
     
-    private func getCharacters(_ endpoint: String = "https://rickandmortyapi.com/api/character") {
+    private func getCharacters() {
+        let endpoint = "https://rickandmortyapi.com/api/character"
         Task {
             isLoading = true
             defer { isLoading = false }
             
             do {
                 let response: RAMItem = try await NetworkManager.shared.request(endpoint)
+                item = response
                 results = response.results
             } catch {
                 errorMessage = error.localizedDescription
@@ -93,22 +111,9 @@ class HomeViewModel: ObservableObject {
         }
     }
     
-    //    func filterCharacters(by filter: FilterType, value: String) async {
-    //        let api = "https://rickandmortyapi.com/api/character?\(filter.rawValue)=\(value)"
-    //        do {
-    //            let filteredCharacters: RAMItem = try await NetworkManager.shared.request(api)
-    //            results = filteredCharacters.results
-    //        } catch {
-    //            errorMessage = error.localizedDescription
-    //        }
-    //    }
-    
-    func viewDidLoad() {
-        getCharacters()
-    }
-    
     private func buildFilterURL() -> String {
-        var components = URLComponents(string: "https://rickandmortyapi.com/api/character")!
+        
+        var components = URLComponents(string: "https://rickandmortyapi.com/api/character/?page=\(page)")
         var queryItems: [URLQueryItem] = []
         
         if let gender = state.selectedGender?.rawValue {
@@ -125,29 +130,22 @@ class HomeViewModel: ObservableObject {
             queryItems.append(.init(name: "name", value: state.search))
         }
         
-        components.queryItems = queryItems.isEmpty ? nil : queryItems
-        return components.string!
+        components?.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components?.string ?? ""
     }
     
-//    func searchChanged() {
-//        searchTask?.cancel()
-//        searchTask = Task {
-//            try? await Task.sleep(nanoseconds: 200_000_000)
-//            applyAllFilters()
-//        }
-//    }
-    
     func applyAllFilters() {
+        
+        isLoading = true
+        
+        let url = buildFilterURL()
+        
+        results = []
+        
         Task {
-            isLoading = true
             defer { isLoading = false }
-
-            let url = buildFilterURL()
-            
-            results = []
-            
             do {
-                print("------------------------------------------------\n\(url)\n------------------------------------------------")
+                print("\(url)")
                 let response: RAMItem = try await NetworkManager.shared.request(url)
                 results = response.results
                 print(results)
@@ -156,5 +154,4 @@ class HomeViewModel: ObservableObject {
             }
         }
     }
-    
 }
