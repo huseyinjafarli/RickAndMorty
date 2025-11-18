@@ -37,18 +37,19 @@ final class NetworkManager: NetworkManagerProtocol {
             throw NetworkError.badResponse
         }
         
-        do {
-            let jsonData = try JSONSerialization.jsonObject(with: data, options: [.json5Allowed])
-            print("FromNetworkManager\(jsonData)*")
-        } catch {
-            print("Error serializing data: \(error)")
-        }
+        //        do {
+        //            let jsonData = try JSONSerialization.jsonObject(with: data, options: [.json5Allowed])
+        //            print("FromNetworkManager\(jsonData)*")
+        //        } catch {
+        //            print("Error serializing data: \(error)")
+        //        }
         
         let decodedData = try JSONDecoder().decode(T.self, from: data)
-
+        
         return decodedData
     }
     
+    ///not usable right now
     func buildFilterURL(name: [String: String]) -> String {
         let baseUrl = "https://rickandmortyapi.com/api/character"
         var components = URLComponents(string: baseUrl)

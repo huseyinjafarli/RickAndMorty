@@ -54,44 +54,50 @@ class HomeViewModel: ObservableObject {
         case .selectedGender(let gender):
             state.makeAllDropDownsClosed()
             state.selectedGender = gender
+            page = 1
             applyAllFilters()
-//            applyFilter(by: "gender", with: gender.rawValue)
         case .selectedSpecies(let species):
             state.makeAllDropDownsClosed()
             state.selectedSpecies = species
+            page = 1
             applyAllFilters()
-//            applyFilter(by: "species", with: species.rawValue)
         case .selectedStatus(let status):
             state.makeAllDropDownsClosed()
             state.selectedStatus = status
+            page = 1
             applyAllFilters()
         case .tappedClearSearch:
             state.search = ""
+            page = 1
             applyAllFilters()
         case .tappedResetFilters:
             state.resetFilters()
             state.search = ""
+            page = 1
             state.makeAllDropDownsClosed()
             applyAllFilters()
         case .tappedSearchButton:
             if !state.search.isEmpty {
+                page = 1
                 applyAllFilters()
             }
         case .itemSelected(let item):
             state.selectedItem = item
             state.goToDetailsView = true
+            state.makeAllDropDownsClosed()
         case .viewDidLoad:
             guard !viewDidLoad else { return }
             viewDidLoad = true
-//            getCharacters()
             applyAllFilters()
         case .scrolledToEnd:
+            state.bottomItemAppearing = true
             page += 1
-            applyAllFilters()
             print("scrolled to end")
+            applyAllFilters()
         case .newPageLoaded:
-            state.newPageIsLoading = false
-            
+            break
+        case .nextPageWillShow:
+            break
         }
     }
     
@@ -113,7 +119,7 @@ class HomeViewModel: ObservableObject {
     
     private func buildFilterURL() -> String {
         
-        var components = URLComponents(string: "https://rickandmortyapi.com/api/character/?page=\(page)")
+        var components = URLComponents(string: "https://rickandmortyapi.com/api/character/")
         var queryItems: [URLQueryItem] = []
         
         if let gender = state.selectedGender?.rawValue {
@@ -130,25 +136,30 @@ class HomeViewModel: ObservableObject {
             queryItems.append(.init(name: "name", value: state.search))
         }
         
+        queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
+        
         components?.queryItems = queryItems.isEmpty ? nil : queryItems
         return components?.string ?? ""
     }
     
     func applyAllFilters() {
-        
         isLoading = true
         
         let url = buildFilterURL()
         
-        results = []
+        if page == 1 {
+            results = []
+        }
         
         Task {
             defer { isLoading = false }
             do {
                 print("\(url)")
-                let response: RAMItem = try await NetworkManager.shared.request(url)
-                results = response.results
-                print(results)
+                let response: RAMItem = try await nm.request(url)
+                
+                results.append(contentsOf: response.results)
+                
+                print("Total count: \(results.count)")
             } catch {
                 errorMessage = error.localizedDescription
             }

@@ -17,7 +17,8 @@ struct HomeState {
     var showStatusDropDown = false
     var goToDetailsView = false
     var selectedItem: RAMResult? = nil
-    var newPageIsLoading: Bool = false
+//    var newPageIsLoading: Bool = false
+    var bottomItemAppearing: Bool = false
     var allFiltersNil: Bool {
         selectedGender == nil && selectedSpecies == nil && selectedStatus == nil
     }

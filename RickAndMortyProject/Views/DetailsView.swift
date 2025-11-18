@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct DetailsView: View {
-    /*@Binding */var item: RAMResult
+    var item: RAMResult
     var body: some View {
         
         ScrollView {
             VStack {
                 AsyncImage(url: URL(string: item.image)) { imagePhase in
+                    
                     if let image = imagePhase.image {
                         image
                             .resizable()
@@ -43,9 +44,8 @@ struct DetailsView: View {
                     }
                     .font(.title2)
                     .fontWeight(.semibold)
-//                    .minimumScaleFactor(0.7)
                 }
-
+                
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
             }
@@ -54,7 +54,6 @@ struct DetailsView: View {
                 .stroke(Color.secondary, lineWidth: 1))
             .padding()
         }
-//        .padding(.vertical, 32)
     }
 }
 

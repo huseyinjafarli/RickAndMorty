@@ -20,5 +20,6 @@ enum HomeIntent {
     case itemSelected(RAMResult)
     case viewDidLoad
     case scrolledToEnd
+    case nextPageWillShow
     case newPageLoaded
 }

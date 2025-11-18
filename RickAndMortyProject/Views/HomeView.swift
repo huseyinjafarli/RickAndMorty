@@ -23,8 +23,7 @@ struct HomeView: View {
                         .fill(.clear)
                         .frame(height: 120)
                     ScrollView {
-                        LazyVStack(alignment: .leading) {
-//                            Spacer()
+                        LazyVStack(alignment: .center) {
                             if !vm.results.isEmpty {
                                 ForEach(vm.results) { result in
                                     cell(for: result)
@@ -36,7 +35,6 @@ struct HomeView: View {
                                                 vm.send(.scrolledToEnd)
                                             }
                                         }
-                                    
                                 }
                                 .padding(.horizontal, 10)
                             } else {
@@ -45,6 +43,7 @@ struct HomeView: View {
                                         .foregroundColor(.gray)
                                         .italic()
                                 } else {
+                                    Spacer()
                                     ProgressView()
                                 }
                             }
@@ -109,8 +108,6 @@ struct HomeView: View {
                 } onSelect: { gender in
                     vm.send(.selectedGender(gender))
                 }
-                .frame(maxWidth: 150)
-                .frame(maxHeight: 50)
                 
                 Spacer()
                 
@@ -119,8 +116,6 @@ struct HomeView: View {
                 } onSelect: { species in
                     vm.send(.selectedSpecies(species))
                 }
-                .frame(maxWidth: 150)
-                .frame(maxHeight: 50)
                 
                 Spacer()
                 
@@ -129,11 +124,9 @@ struct HomeView: View {
                 } onSelect: { status in
                     vm.send(.selectedStatus(status))
                 }
-                .frame(maxWidth: 150)
-                .frame(maxHeight: 50)
             }
-            .frame(maxWidth: .infinity)
             .padding(.horizontal)
+            
         }
     }
     
@@ -216,7 +209,6 @@ struct FilterPicker<T: CaseIterable & RawRepresentable & Hashable>: View where T
     
     var body: some View {
         VStack(alignment: .leading) {
-            
             // MARK: - Button (header)
             Button(action: onTap) {
                 HStack {
@@ -233,28 +225,30 @@ struct FilterPicker<T: CaseIterable & RawRepresentable & Hashable>: View where T
             
             // MARK: - Dropdown
             if isOpen {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(T.allCases), id: \.self) { value in
-                        Button {
-                            onSelect(value)
-                        } label: {
-                            Text(value.rawValue)
-                                .fontWeight(.medium)
-                                .padding(.vertical, 4)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(T.allCases), id: \.self) { value in
+                            Button {
+                                onSelect(value)
+                            } label: {
+                                Text(value.rawValue)
+                                    .fontWeight(.medium)
+                                    .padding(.top, 4)
+                            }
                         }
                     }
                 }
+                .frame(maxHeight: title == "Status" ? 100 : 120)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .frame(maxWidth: 150)
+        .frame(maxWidth: .infinity)
         .padding(12)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.gray.opacity(0.4), lineWidth: 1)
         )
-        .background(Color.white)
+        .background(.background)
         .animation(.easeInOut(duration: 0.2), value: isOpen)
     }
 }
@@ -270,11 +264,6 @@ extension View {
                         vm.send(.tappedResetFilters)
                     }
                     .disabled(vm.state.allFiltersNil)
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    if vm.state.newPageIsLoading {
-                        ProgressView()
-                    }
                 }
             }
     }
