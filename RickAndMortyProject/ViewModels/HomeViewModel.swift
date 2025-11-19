@@ -17,6 +17,7 @@ class HomeViewModel: ObservableObject {
     var page: Int = 1
     var nm = NetworkManager.shared
     var viewDidLoad: Bool = false
+    var isPageEnd: Bool = false
     func send(_ intent: HomeIntent) {
         handleUIEvent(intent)
     }
@@ -91,8 +92,19 @@ class HomeViewModel: ObservableObject {
             applyAllFilters()
         case .scrolledToEnd:
             state.bottomItemAppearing = true
-            page += 1
             print("scrolled to end")
+            if let ramItem = item {
+                guard ramItem.info.next != nil else {
+                    print("there's no next page")
+                    isPageEnd = true
+                    return
+                }
+
+            } else {
+                print("there's no item")
+                return
+            }
+            page += 1
             applyAllFilters()
         case .newPageLoaded:
             break
@@ -156,11 +168,12 @@ class HomeViewModel: ObservableObject {
             do {
                 print("\(url)")
                 let response: RAMItem = try await nm.request(url)
-                
+                item = response
                 results.append(contentsOf: response.results)
                 
                 print("Total count: \(results.count)")
             } catch {
+                print("decode error")
                 errorMessage = error.localizedDescription
             }
         }
