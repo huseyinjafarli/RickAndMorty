@@ -1,15 +1,15 @@
 //
-//  RAMItem.swift
+//  RAMCharacter.swift
 //  RickAndMortyProject
 //
 //  Created by Huseyin Jafarli on 17.11.25.
 //
 
-struct RAMItem: Codable {
+struct RAMCharacter: Codable {
     var info: RAMInfo
-    var results: [RAMResult]
+    var results: [RAMCharacterResult]
 }
 
-func mock() -> RAMResult {
+func mock() -> RAMCharacterResult {
     .init(id: 1, name: "Huseyin Jafarli", status: "Alive", species: "Alien", type: "My Type", gender: "Male", image: "https://rickandmortyapi.com/api/character/avatar/269.jpeg", location: .init(name: "My Location", url: ""), origin: .init(name: "My Origin", url: ""))
 }

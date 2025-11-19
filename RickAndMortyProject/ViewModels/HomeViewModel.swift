@@ -9,9 +9,10 @@ import Foundation
 
 @MainActor
 class HomeViewModel: ObservableObject {
-    @Published var item: RAMItem?
+    @Published var character: RAMCharacter?
+//    @Published var location: RAMLocation?
     @Published var state = HomeState()
-    @Published var results: [RAMResult] = []
+    @Published var results: [RAMCharacterResult] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     var page: Int = 1
@@ -33,7 +34,6 @@ class HomeViewModel: ObservableObject {
             } else {
                 state.showGenderDropDown = false
             }
-            
         case .tappedFilterBySpecies:
             if state.allDropDownsClosed {
                 state.showSpeciesDropDown = true
@@ -78,6 +78,7 @@ class HomeViewModel: ObservableObject {
             state.makeAllDropDownsClosed()
             applyAllFilters()
         case .tappedSearchButton:
+            state.makeAllDropDownsClosed()
             if !state.search.isEmpty {
                 page = 1
                 applyAllFilters()
@@ -93,71 +94,50 @@ class HomeViewModel: ObservableObject {
         case .scrolledToEnd:
             state.bottomItemAppearing = true
             print("scrolled to end")
-            if let ramItem = item {
+            if let ramItem = character {
                 guard ramItem.info.next != nil else {
                     print("there's no next page")
                     isPageEnd = true
                     return
                 }
-
+                
             } else {
                 print("there's no item")
                 return
             }
             page += 1
             applyAllFilters()
-        case .newPageLoaded:
-            break
-        case .nextPageWillShow:
-            break
+        case .tappedSearchTextField:
+            state.makeAllDropDownsClosed()
         }
     }
-    
-    private func getCharacters() {
-        let endpoint = "https://rickandmortyapi.com/api/character"
-        Task {
-            isLoading = true
-            defer { isLoading = false }
-            
-            do {
-                let response: RAMItem = try await NetworkManager.shared.request(endpoint)
-                item = response
-                results = response.results
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-    
-    private func buildFilterURL() -> String {
+
+    private func getParams() -> [String : String]? {
+        var params: [String: String] = [:]
+        params["page"] = "\(page)"
         
-        var components = URLComponents(string: "https://rickandmortyapi.com/api/character/")
-        var queryItems: [URLQueryItem] = []
-        
-        if let gender = state.selectedGender?.rawValue {
-            queryItems.append(URLQueryItem(name: "gender", value: gender))
+        if let gender = state.selectedGender {
+            params["gender"] = gender.rawValue
         }
+        
         if let species = state.selectedSpecies?.rawValue {
-            queryItems.append(URLQueryItem(name: "species", value: species))
+            params["species"] = species
         }
         if let status = state.selectedStatus?.rawValue {
-            queryItems.append(URLQueryItem(name: "status", value: status))
+            params["status"] = status
         }
         
         if !state.search.isEmpty {
-            queryItems.append(.init(name: "name", value: state.search))
+            params["name"] = state.search
         }
         
-        queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
-        
-        components?.queryItems = queryItems.isEmpty ? nil : queryItems
-        return components?.string ?? ""
+        return params
     }
+
     
-    func applyAllFilters() {
+    private func applyAllFilters() {
         isLoading = true
         
-        let url = buildFilterURL()
         
         if page == 1 {
             results = []
@@ -166,12 +146,13 @@ class HomeViewModel: ObservableObject {
         Task {
             defer { isLoading = false }
             do {
-                print("\(url)")
-                let response: RAMItem = try await nm.request(url)
-                item = response
+//                print("\(url)")
+                let response: RAMCharacter = try await nm.request("https://rickandmortyapi.com/api/character", parameter: getParams())
+                character = response
                 results.append(contentsOf: response.results)
                 
                 print("Total count: \(results.count)")
+                
             } catch {
                 print("decode error")
                 errorMessage = error.localizedDescription

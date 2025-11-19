@@ -37,14 +37,16 @@ struct HomeView: View {
                                         }
                                 }
                                 .padding(.horizontal, 10)
+                                if vm.isPageEnd {
+                                    Divider()
+                                        .foregroundStyle(.secondary)
+                                        .padding()
+                                }
                             } else {
                                 if !vm.isLoading {
                                     Text("No results found")
                                         .foregroundColor(.gray)
                                         .italic()
-                                } else {
-                                    Spacer()
-                                    ProgressView()
                                 }
                             }
                         }
@@ -92,6 +94,9 @@ struct HomeView: View {
             .onSubmit {
                 vm.send(.tappedSearchButton)
             }
+            .onTapGesture {
+                vm.send(.tappedSearchButton)
+            }
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 16)
                 .stroke(lineWidth: 1))
@@ -131,7 +136,7 @@ struct HomeView: View {
     }
     
     @ViewBuilder
-    func cell(for character: RAMResult) -> some View {
+    func cell(for character: RAMCharacterResult) -> some View {
         var circleColor: Color {
             switch character.status {
             case "Alive":
@@ -264,6 +269,13 @@ extension View {
                         vm.send(.tappedResetFilters)
                     }
                     .disabled(vm.state.allFiltersNil)
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    if vm.isLoading {
+                        ProgressView()
+                    } else {
+                        EmptyView()
+                    }
                 }
             }
     }

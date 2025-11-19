@@ -22,8 +22,8 @@ final class NetworkManager: NetworkManagerProtocol {
         case decodingError
     }
     
-    func request<T: Decodable>(_ endpoint: String) async throws -> T {
-        guard let url = URL(string: endpoint) else {
+    func request<T: Decodable>(_ url: String, parameter: [String : String]?) async throws -> T {
+        guard let url = URL(string: buildURL(url, parameters: parameter)) else {
             throw NetworkError.badUrl
         }
         
@@ -49,20 +49,27 @@ final class NetworkManager: NetworkManagerProtocol {
         return decodedData
     }
     
+    //"https://rickandmortyapi.com/api/character"
     ///not usable right now
-    func buildFilterURL(name: [String: String]) -> String {
-        let baseUrl = "https://rickandmortyapi.com/api/character"
-        var components = URLComponents(string: baseUrl)
-        var queryItems: [URLQueryItem] = []
-        for item in name {
-            let queryItem = URLQueryItem(name: item.key, value: item.value)
-            queryItems.append(queryItem)
+    private func buildURL(_ url: String, parameters: [String: String]?) -> String {
+        var absoluteUrlString = url
+        
+        if let parameters {
+            var components = URLComponents(string: absoluteUrlString)
+            var queryItems: [URLQueryItem] = []
+            for item in parameters {
+                let queryItem = URLQueryItem(name: item.key, value: item.value)
+                queryItems.append(queryItem)
+            }
+            components?.queryItems = queryItems.isEmpty ? nil : queryItems
+            absoluteUrlString = components?.url?.absoluteString ?? ""
         }
-        components?.queryItems = queryItems.isEmpty ? nil : queryItems
-        return components?.string ?? ""
+        print(String(describing: parameters ?? [:]))
+        print(absoluteUrlString)
+        return absoluteUrlString
     }
 }
 
 protocol NetworkManagerProtocol {
-    func request<T: Decodable>(_ endpoint: String) async throws -> T
+    func request<T: Decodable>(_ url: String, parameter: [String : String]?) async throws -> T
 }

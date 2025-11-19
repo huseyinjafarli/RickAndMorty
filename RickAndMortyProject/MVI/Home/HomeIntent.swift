@@ -12,14 +12,13 @@ enum HomeIntent {
     case tappedFilterBySpecies
     case tappedFilterByStatus
     case tappedClearSearch
+    case tappedSearchTextField
     case tappedSearchButton
     case tappedResetFilters
     case selectedGender(Gender)
     case selectedSpecies(Species)
     case selectedStatus(Status)
-    case itemSelected(RAMResult)
+    case itemSelected(RAMCharacterResult)
     case viewDidLoad
     case scrolledToEnd
-    case nextPageWillShow
-    case newPageLoaded
 }

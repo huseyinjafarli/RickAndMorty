@@ -5,7 +5,7 @@
 //  Created by Huseyin Jafarli on 18.11.25.
 //
 
-struct RAMResult: Codable, Identifiable {
+struct RAMCharacterResult: RAMResult, Identifiable {
     var id: Int
     var name: String
     var status: String
@@ -16,3 +16,4 @@ struct RAMResult: Codable, Identifiable {
     var location: Location
     var origin: Origin
 }
+
